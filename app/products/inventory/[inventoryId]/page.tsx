@@ -3,39 +3,46 @@ import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Package } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, use } from "react"; // ⬅️ penting, import use dari react
+import { useEffect, useState, use } from "react"; 
 import axiosInstance from "@/axiosInstance";
 import Cookies from "js-cookie";
 
 export default function InventoryProductsPage({ params }: { params: Promise<{ inventoryId: string }> }) {
-  const { inventoryId } = use(params); // ⬅️ unwrap promise
+  const { inventoryId } = use(params);
   const [products, setProducts] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const token = Cookies.get("token");
-        if (!token) {
-          console.error("No token found, please login first.");
-          return;
-        }
-
-        const res = await axiosInstance.get(`/products/inventories/${inventoryId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        console.log("Products API response:", res.status, res.data);
-        setProducts(res.data.data || []);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-      } finally {
-        setIsLoading(false);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const token = Cookies.get("token");
+      if (!token) {
+        console.error("No token found, please login first.");
+        return;
       }
-    };
 
-    fetchProducts();
-  }, [inventoryId]);
+      // Fetch products
+      const prodRes = await axiosInstance.get(`/products/inventories/${inventoryId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProducts(prodRes.data.data || []);
+
+      // Fetch inventory detail
+      const invRes = await axiosInstance.get(`/inventories/${inventoryId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setInventory(invRes.data.data); // ⬅️ langsung simpan object data
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchData();
+}, [inventoryId]);
+
 
   if (isLoading) {
     return (
@@ -66,7 +73,7 @@ export default function InventoryProductsPage({ params }: { params: Promise<{ in
       <div className="text-center">
         <div className="flex items-center justify-center space-x-2 mb-4">
           <Package className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Products from {inventoryId}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Products from {inventory?.name}</h1>
         </div>
         <p className="text-gray-600">{products.length} products found in this inventory</p>
       </div>

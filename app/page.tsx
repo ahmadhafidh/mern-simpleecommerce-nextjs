@@ -15,27 +15,47 @@ import { Search } from "lucide-react";
 
 export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
+  const [inventories, setInventories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // state untuk search + filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedInventory, setSelectedInventory] = useState("all");
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axiosInstance.get("/products");
-        console.log("API response:", res.data); // 👈 cek dulu
-        
-        // ambil array dari data
-        setProducts(res.data.data || []);
+        // fetch products
+        const prodRes = await axiosInstance.get("/products");
+        setProducts(prodRes.data.data || []);
+
+        // fetch inventories
+        const invRes = await axiosInstance.get("/inventories");
+        setInventories(invRes.data.data || []);
       } catch (err) {
-        console.error("Error fetching products:", err);
-        setProducts([]); // fallback biar gak crash
+        console.error("Error fetching data:", err);
+        setProducts([]);
+        setInventories([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
+  // Filter products
+  const filteredProducts = products.filter((product) => {
+    const matchSearch = product.name
+      ?.toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    const matchInventory =
+      selectedInventory === "all" ||
+      product.inventoryId === selectedInventory; // ⬅️ pakai id inventory
+
+    return matchSearch && matchInventory;
+  });
 
   if (loading) {
     return <p className="text-center">Loading products...</p>;
@@ -52,31 +72,48 @@ export default function Home() {
         </p>
       </div>
 
+      {/* 🔎 Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input placeholder="Search products..." className="pl-10" />
+          <Input
+            placeholder="Search products..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="flex gap-2">
-          <Select>
-            <SelectTrigger className="w-[180px]">
+          <Select
+            value={selectedInventory}
+            onValueChange={setSelectedInventory}
+          >
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Inventory" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Inventories</SelectItem>
-              <SelectItem value="electronics">Electronics</SelectItem>
-              <SelectItem value="accessories">Accessories</SelectItem>
+              {inventories.map((inv) => (
+                <SelectItem key={inv.id} value={inv.id}>
+                  {inv.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {/* Produk hasil filter */}
+      {filteredProducts.length === 0 ? (
+        <p className="text-center text-gray-500">No products found</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
