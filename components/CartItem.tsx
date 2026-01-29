@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import { getImageUrl } from "@/lib/getImageUrl";
 
 interface CartItemProps {
   item: CartItemType;
@@ -35,7 +36,7 @@ export default function CartItem({ item }: CartItemProps) {
         <div className="flex items-center space-x-4">
           <div className="relative w-16 h-16 rounded-lg overflow-hidden">
             <Image
-              src={item.product.image}
+              src={getImageUrl(item.product.image)}
               alt={item.product.name}
               fill
               className="object-cover"

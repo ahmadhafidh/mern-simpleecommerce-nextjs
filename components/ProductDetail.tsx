@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, ArrowLeft, Package, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from "@/lib/getImageUrl";
 
 interface ProductDetailProps {
   product: Product;
@@ -31,8 +32,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     });
   };
 
-  const cleanedImage = product.image.replace('http://127.0.0.1:5025', '');
-
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
@@ -53,7 +52,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         <div className="space-y-4">
           <div className="relative aspect-square rounded-lg overflow-hidden">
             <Image
-              src={`https://api-mern-simpleecommerce.idkoding.com${cleanedImage}`}
+              src={getImageUrl(product.image)}
               alt={product.name}
               fill
               className="object-cover"

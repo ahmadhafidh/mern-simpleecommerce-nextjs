@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from "@/lib/getImageUrl";
 
 interface ProductCardProps {
   product: Product;
@@ -23,15 +24,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     }).format(price);
   };
 
-  const cleanedImage = product.image.replace('http://127.0.0.1:5025', '');
-
-
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
       <CardHeader className="p-0">
         <div className="relative overflow-hidden rounded-t-lg">
            <Image
-            src={`https://api-mern-simpleecommerce.idkoding.com${cleanedImage}`}
+            src={getImageUrl(product.image)}
             alt={product.name}
             width={400}
             height={250}
