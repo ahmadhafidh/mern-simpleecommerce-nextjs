@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Receipt, Search, Mail, Calendar, Phone } from 'lucide-react';
+import Link from "next/link";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -77,10 +78,13 @@ export default function InvoicesPage() {
           {filteredInvoices.map((invoice) => (
             <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+                <Link
+                  href={`/invoices/${invoice.id}`}
+                  className="flex items-center space-x-2 cursor-pointer hover:text-blue-700 transition-colors"
+                >
                   <Receipt className="h-5 w-5 text-blue-600" />
                   <span>{invoice.id}</span>
-                </CardTitle>
+                </Link>
               </CardHeader>
 
               <CardContent className="space-y-4">
@@ -92,7 +96,14 @@ export default function InvoicesPage() {
 
                   <div className="flex items-center space-x-2 text-gray-600">
                     <Mail className="h-4 w-4" />
-                    <span>{invoice.email}</span>
+                      <Link
+                          href={`/invoices/email/${encodeURIComponent(
+                            invoice.customerEmail || invoice.email
+                          )}`}
+                          className="underline text-blue-600" // opsional styling
+                        >
+                          {invoice.customerEmail || invoice.email}
+                        </Link>
                   </div>
 
                   <div className="flex items-center space-x-2 text-gray-600">

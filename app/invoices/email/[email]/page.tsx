@@ -1,51 +1,74 @@
-import { mockInvoices } from '@/lib/mockData';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Receipt, ArrowLeft, Mail, Calendar, Eye } from 'lucide-react';
-import Link from 'next/link';
+// app/invoices/email/[email]/page.tsx
+import { cookies } from "next/headers";
+import axiosInstance from "@/axiosInstance";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Receipt, ArrowLeft, Mail, Calendar, Eye } from "lucide-react";
+import Link from "next/link";
 
-interface InvoicesByEmailPageProps {
-  params: {
-    email: string;
-  };
+
+interface Invoice {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  items: string; // string "produk x jumlah, produk x jumlah"
+  total: number;
+  createdAt: string;
+  status?: string;
 }
 
-export default function InvoicesByEmailPage({ params }: InvoicesByEmailPageProps) {
-  const decodedEmail = decodeURIComponent(params.email);
-  const invoices = mockInvoices.filter(inv => inv.customerEmail === decodedEmail);
+interface InvoicesByEmailPageProps {
+  params: Promise<{ email: string }>;
+}
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR'
-    }).format(price);
-  };
+export default async function InvoicesByEmailPage({ params }: InvoicesByEmailPageProps) {
+  const { email } = await params;
+  const decodedEmail = decodeURIComponent(email);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  
+  // Ambil token dari cookies (async)
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  let invoices: Invoice[] = [];
+  try {
+    const res = await axiosInstance.get(`/invoice/user/${decodedEmail}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-  };
+    invoices = res.data.data || [];
+    // console.log("Data invoices:", invoices);
+  } catch (err) {
+    console.error("Failed to fetch invoices:", err);
+  }
 
-  const getStatusColor = (status: string) => {
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(price);
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'paid':
-        return 'default';
-      case 'pending':
-        return 'secondary';
-      case 'cancelled':
-        return 'destructive';
+      case "paid":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "cancelled":
+        return "destructive";
       default:
-        return 'outline';
+        return "outline";
     }
   };
-
-  const totalAmount = invoices.reduce((sum, inv) => sum + inv.total, 0);
 
   return (
     <div className="space-y-6">
@@ -71,7 +94,8 @@ export default function InvoicesByEmailPage({ params }: InvoicesByEmailPageProps
           <h1 className="text-3xl font-bold text-gray-900">Invoices for {decodedEmail}</h1>
         </div>
         <p className="text-gray-600">
-          {invoices.length} invoices found • Total: {formatPrice(totalAmount)}
+          {invoices.length} invoices found • Total:{" "}
+          {formatPrice(invoices.reduce((sum, inv) => sum + inv.total, 0))}
         </p>
       </div>
 
@@ -83,54 +107,71 @@ export default function InvoicesByEmailPage({ params }: InvoicesByEmailPageProps
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {invoices.map((invoice) => (
-            <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Receipt className="h-5 w-5 text-blue-600" />
-                    <span>{invoice.id}</span>
-                  </CardTitle>
-                  <Badge variant={getStatusColor(invoice.status)}>
-                    {invoice.status.toUpperCase()}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <span className="font-medium">Customer:</span>
-                    <span>{invoice.customerName}</span>
+          {invoices.map((invoice) => {
+            // Pecah items string jadi array
+            const itemList = invoice.items
+              ? invoice.items.split(",").map((i) => i.trim())
+              : [];
+            // Hitung total quantity
+            const totalQuantity = itemList.reduce((sum, item) => {
+              const match = item.match(/x\s*(\d+)/i);
+              return sum + (match ? parseInt(match[1]) : 1);
+            }, 0);
+
+            return (
+              <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center space-x-2">
+                      <Receipt className="h-5 w-5 text-blue-600" />
+                      <span>{invoice.id}</span>
+                    </CardTitle>
+                    <Badge variant={getStatusColor(invoice.status)}>
+                      {invoice.status ? invoice.status.toUpperCase() : "N/A"}
+                    </Badge>
                   </div>
-                  
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(invoice.createdAt)}</span>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <span className="font-medium">Customer:</span>
+                      <span>{invoice.name}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatDate(invoice.createdAt)}</span>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Items:</span>
-                    <Badge variant="outline">{invoice.items.length}</Badge>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Items:</span>
+                      <span className="font-medium">{itemList.length}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Total Quantity:</span>
+                      <span className="font-medium">{totalQuantity}</span>
+                    </div>
+
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-blue-600">{formatPrice(invoice.total)}</span>
+                    </div>
                   </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Total:</span>
-                    <span className="text-lg font-bold text-blue-600">{formatPrice(invoice.total)}</span>
-                  </div>
-                </div>
-                
-                <Button className="w-full" asChild>
-                  <Link href={`/invoices/${invoice.id}`}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+
+                  <Button className="w-full" asChild>
+                    <Link href={`/invoices/${invoice.id}`}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
