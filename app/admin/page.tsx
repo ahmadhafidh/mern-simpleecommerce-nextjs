@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Eye, X, Upload } from 'lucide-react';
 import axiosInstance from "@/axiosInstance";
 import { getImageUrl } from "@/lib/getImageUrl";
+import {useRouter} from "next/navigation"
 
 // Types
 interface Product {
@@ -52,6 +53,25 @@ const AdminDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'add' | 'edit'>('add');
   const [editingItem, setEditingItem] = useState<any>(null);
+  const router = useRouter();
+
+
+  useEffect(()=> {
+    const validateAccess = async () => {
+        try {
+            const res = await axiosInstance.get("/inventories");
+            if (!res.data.success) {
+                alert("Anda harus login terlebih dahulu!");
+                router.push("/auth/signin");
+            }
+        } catch (error) {
+            console.error("Validasi gagal:", error);
+            alert("Anda harus login terlebih dahulu!");
+            router.push("/auth/signin");
+        }
+    }
+    validateAccess()
+  }, [router])
 
   // Form states
   const [productForm, setProductForm] = useState({

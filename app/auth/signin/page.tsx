@@ -33,9 +33,9 @@ export default function SignInPage() {
         throw new Error("Invalid login response from server");
       }
 
-      
-      Cookies.set("userId", res.data.data.userId);
-      Cookies.set("userEmail", res.data.data.email);
+            
+      Cookies.set("userId", res.data.data.userId, { expires: 1});
+      Cookies.set("userEmail", res.data.data.email, { expires: 1});
       Cookies.set("token", res.data.data.token, { expires: 1});
 
       setUser({

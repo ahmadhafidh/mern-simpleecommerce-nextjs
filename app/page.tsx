@@ -27,13 +27,18 @@ export default function Home() {
       try {
         // fetch products
         const prodRes = await axiosInstance.get("/products");
-        setProducts(prodRes.data.data || []);
+        const productData = prodRes.data.data || [];
+        setProducts(productData);
 
-        // fetch inventories
-        const invRes = await axiosInstance.get("/inventories");
-        setInventories(invRes.data.data || []);
+        // ambil unique inventory dari products
+        const uniqueInventories = Array.from(
+          new Map(
+            productData.map((p: any) => [p.inventory.id, p.inventory])
+          ).values()
+        );
+        setInventories(uniqueInventories);
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching products:", err);
         setProducts([]);
         setInventories([]);
       } finally {
