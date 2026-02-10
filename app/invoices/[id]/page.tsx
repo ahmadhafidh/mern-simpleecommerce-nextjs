@@ -189,61 +189,67 @@ export default async function InvoiceDetailPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Array.isArray(invoice.items) ? (
-                  invoice.items.map((item: any) => (
-                    <div
-                      key={item.id || item.product?.id}
-                      className="flex items-center space-x-4 p-4 border rounded-lg"
-                    >
-                      {item.product?.image && (
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden">
-                          <Image
-                            src={item.product.image}
-                            alt={item.product.name}
-                            fill
-                            className="object-cover"
-                          />
+                {invoice.items ? (
+                  (() => {
+                    // Parse items
+                    let itemsArray: { name: string; quantity: number; unitPrice?: number }[] = [];
+
+                    if (typeof invoice.items === "string") {
+                      itemsArray = invoice.items
+                        .split(",")
+                        .map((itemStr: string) => itemStr.trim())
+                        .filter(Boolean) // hapus string kosong
+                        .map((itemStr: { split: (arg0: string) => { (): any; new(): any; map: { (arg0: (s: any) => any): [any, any]; new(): any; }; }; }) => {
+                          const [namePart, quantityPart] = itemStr.split("x").map((s: string) => s.trim());
+                          const quantity = quantityPart ? parseInt(quantityPart) : 1;
+                          return {
+                            name: namePart,
+                            quantity,
+                            unitPrice: 0, // default karena tidak ada harga
+                          };
+                        });
+                    } else if (Array.isArray(invoice.items)) {
+                      itemsArray = invoice.items.map((item: any) => ({
+                        name: item.product?.name || "Unknown Product",
+                        quantity: item.quantity || 1,
+                        unitPrice: item.product?.price || 0,
+                      }));
+                    }
+
+                    return itemsArray.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-4 p-4 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.name}</h4>
                         </div>
-                      )}
 
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">
-                          {item.product?.name || "Unknown Product"}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          {item.product?.description}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Product ID: {item.product?.id}
-                        </p>
-                      </div>
+                        <div className="text-center">
+                          <p className="text-sm text-gray-600">Quantity</p>
+                          <p className="font-medium">{item.quantity}</p>
+                        </div>
 
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600">Quantity</p>
-                        <p className="font-medium">{item.quantity || 1}</p>
-                      </div>
+                        <div className="text-center">
+                          <p className="text-sm text-gray-600">Unit Price</p>
+                          <p className="font-medium">
+                            {item.unitPrice ? formatPrice(item.unitPrice) : "-"}
+                          </p>
+                        </div>
 
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600">Unit Price</p>
-                        <p className="font-medium">
-                          {item.product?.price
-                            ? formatPrice(item.product.price)
-                            : "-"}
-                        </p>
+                        <div className="text-center">
+                          <p className="text-sm text-gray-600">Total</p>
+                          <p className="font-bold text-blue-600">
+                            {item.unitPrice
+                              ? formatPrice(item.unitPrice * item.quantity)
+                              : "-"}
+                          </p>
+                        </div>
                       </div>
-
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600">Total</p>
-                        <p className="font-bold text-blue-600">
-                          {item.product?.price
-                            ? formatPrice(item.product.price * (item.quantity || 1))
-                            : "-"}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+                    ));
+                  })()
                 ) : (
-                  <p>{invoice.items}</p>
+                  <p>No items found</p>
                 )}
               </div>
             </CardContent>
@@ -267,11 +273,11 @@ export default async function InvoiceDetailPage({
                   View by Email
                 </Link>
               </Button>
-              
+
               <DownloadPDFButton invoice={invoice} />
 
               <a
-                href={`mailto:ahmadhafyd@gmail.com`} // pastikan invoice.email ada nilainya
+                href={`mailto:${invoice.email}`} // pastikan invoice.email ada nilainya
                 className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 contact-link"
               >
                 <Mail className="h-4 w-4 mr-2" />
