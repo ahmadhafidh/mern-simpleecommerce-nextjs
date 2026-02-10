@@ -48,6 +48,15 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center space-x-3">
                 <span className="text-gray-700 font-medium">Hi, {user.email}</span>
+
+                <Link
+                  href="/admin"
+                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
+
                 <Button
                   onClick={handleLogout}
                   variant="outline"
