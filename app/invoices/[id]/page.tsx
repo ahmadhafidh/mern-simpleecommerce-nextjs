@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { cookies } from "next/headers";
+import DownloadPDFButton from "@/lib/DownloadPDFButton";
 
 interface InvoiceDetailPageProps {
   params: Promise<{ id: string }>;
@@ -266,12 +267,9 @@ export default async function InvoiceDetailPage({
                   View by Email
                 </Link>
               </Button>
-
-              <Button className="w-full" variant="outline">
-                <Receipt className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-
+              
+              <DownloadPDFButton invoice={invoice} />
+              
               <Button className="w-full" variant="outline">
                 <Mail className="h-4 w-4 mr-2" />
                 Send Email
