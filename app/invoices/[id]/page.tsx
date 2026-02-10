@@ -269,11 +269,14 @@ export default async function InvoiceDetailPage({
               </Button>
               
               <DownloadPDFButton invoice={invoice} />
-              
-              <Button className="w-full" variant="outline">
+
+              <a
+                href={`mailto:ahmadhafyd@gmail.com`} // pastikan invoice.email ada nilainya
+                className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 contact-link"
+              >
                 <Mail className="h-4 w-4 mr-2" />
                 Send Email
-              </Button>
+              </a>
             </CardContent>
           </Card>
         </div>
